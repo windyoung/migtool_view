@@ -2,7 +2,7 @@
 '''
 @Author: windyoung
 @Date: 2020-10-10 21:22:33
-LastEditTime: 2020-10-22 19:55:21
+LastEditTime: 2020-10-23 02:04:38
 LastEditors: windyoung
 @Description:
 FilePath: \migtool_view\MigrationStepViewer.py
@@ -172,13 +172,12 @@ class stepviewGui(tkinter.Frame):
                 self.tree_allsteps.tag_configure(
                     'color', background="black", foreground="white")
 
-    def show_onestep(self, event):
+    def show_onestep(self,event):
         "从选中获取stepid 在 stepdetail里 展示内容"
-        # print('单击或回车')
         # 设置了单选，这里处理选中的一行
         item = self.tree_allsteps.selection()
         item_text = self.tree_allsteps.item(item, "values")
-        # print(item_text, type(item_text))  # 输出所选行的第一列的值
+        print(item,item_text, type(item_text))  # 输出所选行的第一列的值
         if item_text == "":
             return False
         step_id = item_text[1]
@@ -221,6 +220,7 @@ class stepviewGui(tkinter.Frame):
             print("ERROR IN get step detail ")
             tkinter.messagebox.showerror(
                 'ERROR', f"can not get step detail \ncheck step id {step_id} ", parent=self.root)
+            self.root.focus_force()
             return False
 
     def show_params(self, event):
@@ -256,6 +256,7 @@ class stepviewGui(tkinter.Frame):
             self.ent_db_con_str["bg"] = "red"
             tkinter.messagebox.showerror(
                 'ERROR', 'db test connect error', parent=self.root)
+            self.root.focus_force()
 
     def btn_check_project(self):
         "点击 OK 按钮：1，检查   project_id的输入  ；2，检查项目状态 ;3, 绑定  project_id的输入 "
@@ -284,6 +285,7 @@ class stepviewGui(tkinter.Frame):
             self.btn_project_id_lock["bg"] = "red"
             tkinter.messagebox.showerror(
                 'ERROR', 'project id check error', parent=self.root)
+            self.root.focus_force()
         #4, 数据库连接写入配置文件
         with open("./migstepviewer.cfg", 'w', encoding="utf-8") as fp:
             yaml.safe_dump({"db_con": self.ent_db_con_str.get().strip(),"projectid":self.ent_project_idstr.get().strip()}, fp)
@@ -317,14 +319,23 @@ class stepviewGui(tkinter.Frame):
         # print(allsteps)
         self.filling_allsteps_data_in_treeview(allsteps)
 
+    def show_ver(self):
+        tkinter.messagebox.showinfo(
+            title='版本说明', icon=None, message="v0.1 工具基本功能完成\nv0.1.1 增加配置记忆\nv0.1.2 修复按键延后相应,增加版本提示", parent=self.root, type="ok")
+        self.root.focus_force()
+        pass
     def draw_GUI(self):
+        """
+        """
         W, E = tkinter.W, tkinter.E
-
+        self.ver="0.1.2"
+        
         # 绘制主窗口
         self.root = tkinter.Tk()
-        self.root.title("Migration Steps Viewer")
+        self.root.title(f"Migration Steps Viewer v{self.ver}")
         self.root.geometry("1210x900+10+10")
         self.root.resizable(1, 1)
+        self.show_ver()
         #
         self.dft_bg = self.root.cget('background')
         self.strV_db_con_str = StringVar()
@@ -362,8 +373,9 @@ class stepviewGui(tkinter.Frame):
             self.lblframe_input, text="OK", state='disabled', command=self.btn_check_project)
         self.btn_project_id_lock.pack(side='left')
         self.lbl_ver_info = tkinter.Label(
-            self.lblframe_input, text="   VER: 0.1.1, 2020-10-12")
-        self.lbl_ver_info.pack(side='left')
+            self.lblframe_input, text=f"   VER: {self.ver}, 2020-10-23")
+        self.lbl_ver_info.pack(side='right')
+
         self.rd_cfg()
         # 7个按钮展示不同的catg
         self.lblframe_catg = tkinter.LabelFrame(
@@ -432,15 +444,19 @@ class stepviewGui(tkinter.Frame):
 
         # 配置位置和大小
         self.tree_allsteps.pack(side='left', fill='both', expand=True)
-        # self.tree_allsteps.bind(["<ButtonRelease-1>","<FocusIn>","<Return>"], self.tv_show_onestep)#绑定点击 事件单击离开,获得键盘焦点,回车键 ===========
+        
         # 绑定事件
-        # 绑定点击 事件单击离开 ==========
+        # 绑定点击 事件：单击离开 ==========
         self.tree_allsteps.bind("<ButtonRelease-1>", self.show_onestep)
-        # 绑定点击事件 回车键 ===========
+        # 绑定点击 事件：回车键 ===========
         self.tree_allsteps.bind("<Return>", self.show_onestep)
-        # 绑定点击事件 方向上下键 ===========
-        self.tree_allsteps.bind("<KeyPress-Up>", self.show_onestep)
-        self.tree_allsteps.bind("<KeyPress-Down>", self.show_onestep)
+        # 绑定点击 事件：方向上下键 =========== 会有延迟响应的问题
+        # self.tree_allsteps.bind("<Up>", self.show_onestep)
+        # self.tree_allsteps.bind("<Down>", self.show_onestep)
+        # 绑定点击 事件：选中Treeview ==========
+        self.tree_allsteps.bind("<<TreeviewSelect>>", self.show_onestep)
+
+
         self.tree_allsteps["selectmode"] = "none"
 
         # 使用frame区分
@@ -468,8 +484,10 @@ class stepviewGui(tkinter.Frame):
                                fill='both', expand=True)
         # 点击选中值
         self.tree_onestep.bind("<ButtonRelease-1>", self.show_params)
-        self.tree_onestep.bind("<KeyPress-Up>", self.show_params)
-        self.tree_onestep.bind("<KeyPress-Down>", self.show_params)
+        # self.tree_onestep.bind("<KeyPress-Up>", self.show_params)
+        # self.tree_onestep.bind("<KeyPress-Down>", self.show_params)
+        self.tree_onestep.bind("<<TreeviewSelect>>", self.show_params)
+
         self.root.mainloop()
 
 
