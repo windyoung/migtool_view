@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 '''
-Author: Zhu Jian
+Author: windyoung
 Date: 2020-10-13 05:25:20
-LastEditTime: 2020-10-13 12:51:15
-LastEditors: Zhu Jian
+LastEditTime: 2020-10-22 19:58:19
+LastEditors: windyoung
 Description: 
-FilePath: \migtool_view\testsqlparse.py
+FilePath: \migtool_view\sql blood relationship analysis\testsqlparse.py
 
 '''
+
 import sqlparse
 import sys
 from sqlparse.sql import IdentifierList, Identifier, Where

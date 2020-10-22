@@ -1,14 +1,15 @@
 '''
-Author: Zhu Jian
+Author: windyoung
 Date: 2020-10-13 13:02:27
-LastEditTime: 2020-10-16 12:16:08
-LastEditors: Zhu Jian
+LastEditTime: 2020-10-22 19:58:28
+LastEditors: windyoung
 Description:  官方样例
-FilePath: \migtool_view\test5_official.py
+FilePath: \migtool_view\sql blood relationship analysis\test5_official.py
 '''
 import sqlparse
 from sqlparse.sql import IdentifierList, Identifier
 from sqlparse.tokens import Keyword, DML
+
 
 
 def is_subselect(parsed):

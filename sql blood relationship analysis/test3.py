@@ -1,12 +1,13 @@
 # coding=utf-8
 
 '''
-Author: Zhu Jian
+Author: windyoung
 Date: 2020-10-13 12:36:21
-LastEditTime: 2020-10-13 13:28:08
-LastEditors: Zhu Jian
+LastEditTime: 2020-10-22 19:58:42
+LastEditors: windyoung
 Description: 
-FilePath: \migtool_view\test3.py
+FilePath: \migtool_view\sql blood relationship analysis\test3.py
+
 
 '''
 from __future__ import absolute_import

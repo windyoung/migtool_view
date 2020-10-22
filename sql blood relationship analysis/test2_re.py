@@ -1,14 +1,15 @@
 import ply.lex as lex
 import re
 '''
-Author: Zhu Jian
+Author: windyoung
 Date: 2020-10-13 09:55:56
-LastEditTime: 2020-10-13 13:31:53
-LastEditors: Zhu Jian
+LastEditTime: 2020-10-22 19:59:02
+LastEditors: windyoung
 Description: 
-FilePath: \migtool_view\test2.py
+FilePath: \migtool_view\sql blood relationship analysis\test2_re.py
 
 '''
+
 def tables_in_query(sql_str):
 
     # remove the /* */ comments

@@ -1,12 +1,13 @@
 '''
-Author: Zhu Jian
+Author: windyoung
 Date: 2020-10-13 12:53:09
-LastEditTime: 2020-10-13 13:27:40
-LastEditors: Zhu Jian
+LastEditTime: 2020-10-22 19:58:35
+LastEditors: windyoung
 Description:  官方样例改进join
-FilePath: \migtool_view\test4.py
+FilePath: \migtool_view\sql blood relationship analysis\test4_officia_imporviel.py
 
 '''
+
 import sqlparse
 from sqlparse.sql import IdentifierList, Identifier
 from sqlparse.tokens import Keyword, DML

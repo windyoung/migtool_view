@@ -1,10 +1,10 @@
 '''
-Author: Zhu Jian
+Author: windyoung
 Date: 2020-10-10 23:22:30
-LastEditTime: 2020-10-12 03:15:25
-LastEditors: Zhu Jian
+LastEditTime: 2020-10-22 19:58:12
+LastEditors: windyoung
 Description: 
-FilePath: \migtool_view\testtreeview_event.py
+FilePath: \migtool_view\sql blood relationship analysis\testtreeview_event.py
 
 '''
 import tkinter

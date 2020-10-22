@@ -1,14 +1,15 @@
 # -*- coding:UTF-8 -*-
 import sqlparse
 '''
-Author: Zhu Jian
+Author: windyoung
 Date: 2020-10-13 06:57:15
-LastEditTime: 2020-10-13 12:39:46
-LastEditors: Zhu Jian
+LastEditTime: 2020-10-22 19:58:53
+LastEditors: windyoung
 Description: 
-FilePath: \migtool_view\test1.py
+FilePath: \migtool_view\sql blood relationship analysis\test1.py
 
 '''
+
 
 sql = "select id,name_,age from dual;select id,'18;19',age from actor;"
 sql = "    select K.a,K.b from (select H.b from (select G.c from (select F.d from     (select E.e from A, B, C, D, E), F), G), H), I, J, K order by 1,2;"
