@@ -1,8 +1,8 @@
 '''
-Author: Zhu Jian
+Author: windyoung
 Date: 2020-10-13 13:25:25
-LastEditTime: 2020-10-21 16:10:21
-LastEditors: Zhu Jian
+LastEditTime: 2020-10-22 19:53:26
+LastEditors: windyoung
 Description: 
 FilePath: \migtool_view\mytest.py
 

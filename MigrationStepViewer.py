@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 '''
-@Author: Zhu Jian
+@Author: windyoung
 @Date: 2020-10-10 21:22:33
-LastEditTime: 2020-10-13 19:28:12
-LastEditors: Zhu Jian
+LastEditTime: 2020-10-22 19:55:21
+LastEditors: windyoung
 @Description:
 FilePath: \migtool_view\MigrationStepViewer.py
 @
@@ -127,8 +127,8 @@ class stepviewGui(tkinter.Frame):
             with open("./migstepviewer.cfg", 'r', encoding="utf-8") as fp:
                 a = yaml.safe_load(fp)
             print(a)
-            self.migsever_db_constr = a["db_con"]
-            self.project_id = a["projectid"]
+            self.migsever_db_constr = a['db_con']
+            self.project_id = a['projectid']
             # 先删后插
             self.ent_db_con_str.delete(0, 'end')
             self.ent_db_con_str.insert('end', self.migsever_db_constr)
