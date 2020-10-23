@@ -2,7 +2,7 @@
 '''
 @Author: windyoung
 @Date: 2020-10-10 21:22:33
-LastEditTime: 2020-10-23 02:04:38
+LastEditTime: 2020-10-23 10:08:42
 LastEditors: windyoung
 @Description:
 FilePath: \migtool_view\MigrationStepViewer.py
@@ -24,7 +24,8 @@ class stepviewData():
         self.migsever_db_constr = migsever_db_constr
         self.init_db_con()
         pass
-    def get_all_steps_for_exporter(self,project_id):
+
+    def get_all_steps_for_exporter(self, project_id):
         sql = f''' SELECT COUNT(1) cnt
         FROM MGF_PROJECT A
         WHERE A.PROJECT_ID = :PROJECT_ID
@@ -132,10 +133,9 @@ class stepviewGui(tkinter.Frame):
             # 先删后插
             self.ent_db_con_str.delete(0, 'end')
             self.ent_db_con_str.insert('end', self.migsever_db_constr)
-            self.ent_project_idstr["state"] ="normal"
+            self.ent_project_idstr["state"] = "normal"
             self.ent_project_idstr.delete(0, 'end')
             self.ent_project_idstr.insert('end', self.project_id)
-            # self.ent_project_idstr["state"] ="readonly"
 
     def test_db(self):
         try:
@@ -172,12 +172,12 @@ class stepviewGui(tkinter.Frame):
                 self.tree_allsteps.tag_configure(
                     'color', background="black", foreground="white")
 
-    def show_onestep(self,event):
+    def show_onestep(self, event):
         "从选中获取stepid 在 stepdetail里 展示内容"
         # 设置了单选，这里处理选中的一行
         item = self.tree_allsteps.selection()
         item_text = self.tree_allsteps.item(item, "values")
-        print(item,item_text, type(item_text))  # 输出所选行的第一列的值
+        print(item, item_text, type(item_text))  # 输出所选行的第一列的值
         if item_text == "":
             return False
         step_id = item_text[1]
@@ -194,8 +194,8 @@ class stepviewGui(tkinter.Frame):
             self.text_stepdetail.insert(
                 "end", f"step [{step_id}] detail infomation\n------------------------------->\n")
             for key in stepdetail:
-                self.text_stepdetail.insert("end", str(
-                    f"item--> {str(key).upper()}:\nvalue--> {str(stepdetail[key])} \n------------------------------->\n"))
+                self.text_stepdetail.insert("end",
+                                            f"item--> {str(key).upper()}:\nvalue--> {str(stepdetail[key])} \n------------------------------->\n")
             self.text_stepdetail.insert(
                 "end", "\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
             # 处理参数
@@ -288,10 +288,11 @@ class stepviewGui(tkinter.Frame):
             self.root.focus_force()
         #4, 数据库连接写入配置文件
         with open("./migstepviewer.cfg", 'w', encoding="utf-8") as fp:
-            yaml.safe_dump({"db_con": self.ent_db_con_str.get().strip(),"projectid":self.ent_project_idstr.get().strip()}, fp)
+            yaml.safe_dump({"db_con": self.ent_db_con_str.get().strip(
+            ), "projectid": self.ent_project_idstr.get().strip()}, fp)
 
     def btn_click_catg_btn(self, exec_order_id):
-        "点击   按钮：1，清空下方的展示；2，获取 step_catg_id，没有steps的情况弹窗   3 返回 step_catg_id 4,更新展示全部的step "
+        "点击category按钮：1，清空下方的展示；2，获取 step_catg_id，没有steps的情况弹窗   3 返回 step_catg_id 4,更新展示全部的step "
         print("exec_order_id", exec_order_id)
         project_id = self.project_id
         # 修改btn的状态
@@ -321,22 +322,23 @@ class stepviewGui(tkinter.Frame):
 
     def show_ver(self):
         tkinter.messagebox.showinfo(
-            title='版本说明', icon=None, message="v0.1 工具基本功能完成\nv0.1.1 增加配置记忆\nv0.1.2 修复按键延后相应,增加版本提示", parent=self.root, type="ok")
+            title=f'版本说明{self.ver}', icon=None, message="v0.1 工具基本功能完成\nv0.1.1 增加配置记忆\nv0.1.2 修复按键延后相应,增加版本提示", parent=self.root, type="ok")
         self.root.focus_force()
-        pass
+
     def draw_GUI(self):
         """
         """
-        W, E = tkinter.W, tkinter.E
-        self.ver="0.1.2"
-        
+        # 版本号，时间
+        self.ver = "0.1.2"
+
         # 绘制主窗口
         self.root = tkinter.Tk()
         self.root.title(f"Migration Steps Viewer v{self.ver}")
         self.root.geometry("1210x900+10+10")
         self.root.resizable(1, 1)
         self.show_ver()
-        #
+
+        # 参数绑定
         self.dft_bg = self.root.cget('background')
         self.strV_db_con_str = StringVar()
         self.strV_project_id = StringVar()
@@ -346,7 +348,6 @@ class stepviewGui(tkinter.Frame):
         # 连接时1，清空其他地方的展示；2，锁定 数据库连接串 ; 3，检查数据库是否可以连接
         self.lblframe_input = tkinter.LabelFrame(
             self.root, text="input infomation", padx=5, pady=5)
-        # self.lblframe_input.place(x=5,y=5,width=1200)
         self.lblframe_input.pack(side='top', expand=True, fill='both')
         self.lbl_db_con_str = tkinter.Label(
             self.lblframe_input, text="Database Constr:")
@@ -354,7 +355,7 @@ class stepviewGui(tkinter.Frame):
         self.ent_db_con_str = tkinter.Entry(
             self.lblframe_input, width=45, textvariable=self.strV_db_con_str)
         self.strV_db_con_str.set(
-            "mig_pool/smart@10.45.82.28:1521/orcl\ninput mig database connection string here")
+            "mig_pool/smart@10.45.82.28:1521/orcl input mig database connection string here")
         # self.strV_db_con_str.set("zj_mig/smart@10.45.82.28:1521/orcl")
         self.ent_db_con_str.pack(side='left')
         self.btn_con_db = tkinter.Button(
@@ -375,7 +376,7 @@ class stepviewGui(tkinter.Frame):
         self.lbl_ver_info = tkinter.Label(
             self.lblframe_input, text=f"   VER: {self.ver}, 2020-10-23")
         self.lbl_ver_info.pack(side='right')
-
+        # 读取配置文件
         self.rd_cfg()
         # 7个按钮展示不同的catg
         self.lblframe_catg = tkinter.LabelFrame(
@@ -435,8 +436,9 @@ class stepviewGui(tkinter.Frame):
         self.tree_allsteps.heading('function_code', text='function_code')
         self.tree_allsteps.heading('state', text='state')
         # 测试数据
-        tree1 = (("1", "1", "1", "1", 'finish'), ("2", "1", "1",
-                                                  "1", 'finish'), ("3", "1", "1", "1", 'finish'))
+        tree1 = (("1", "1", "1", "1", 'finish'),
+                 ("2", "1", "1", "1", 'finish'),
+                 ("3", "1", "1", "1", 'finish'))
         self.tree_allsteps.insert(
             '', 'end', values=("0", "1", "1", "1", 'finish'))
         for i in tree1:
@@ -444,7 +446,7 @@ class stepviewGui(tkinter.Frame):
 
         # 配置位置和大小
         self.tree_allsteps.pack(side='left', fill='both', expand=True)
-        
+
         # 绑定事件
         # 绑定点击 事件：单击离开 ==========
         self.tree_allsteps.bind("<ButtonRelease-1>", self.show_onestep)
@@ -455,7 +457,6 @@ class stepviewGui(tkinter.Frame):
         # self.tree_allsteps.bind("<Down>", self.show_onestep)
         # 绑定点击 事件：选中Treeview ==========
         self.tree_allsteps.bind("<<TreeviewSelect>>", self.show_onestep)
-
 
         self.tree_allsteps["selectmode"] = "none"
 
@@ -484,8 +485,6 @@ class stepviewGui(tkinter.Frame):
                                fill='both', expand=True)
         # 点击选中值
         self.tree_onestep.bind("<ButtonRelease-1>", self.show_params)
-        # self.tree_onestep.bind("<KeyPress-Up>", self.show_params)
-        # self.tree_onestep.bind("<KeyPress-Down>", self.show_params)
         self.tree_onestep.bind("<<TreeviewSelect>>", self.show_params)
 
         self.root.mainloop()
