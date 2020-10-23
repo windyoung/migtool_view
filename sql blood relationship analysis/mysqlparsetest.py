@@ -1,10 +1,10 @@
 '''
 Author: windyoung
 Date: 2020-10-13 13:25:25
-LastEditTime: 2020-10-22 19:53:26
+LastEditTime: 2020-10-23 11:45:56
 LastEditors: windyoung
 Description: 
-FilePath: \migtool_view\mytest.py
+FilePath: \migtool_view\sql blood relationship analysis\mysqlparsetest.py
 
 '''
 
@@ -136,14 +136,28 @@ class get_sql_tables():
         for sql in sqllist:
             a = sqlparse.split(sql)
             for b in a:
-                c = sqlparse.format(b, reindent=True, keyword_case="upper")
+                c = sqlparse.format(b, reindent=True, keyword_case="upper", strip_comments=True)
                 f_sql.append(c)
         return f_sql
 
     def analyze_sql(self, sql):
+        sql_tokens = []
         a_parse = sqlparse.parse(sql)
         for b_token in a_parse[0].tokens:
-            print("token ttype:", b_token.ttype, "value:", b_token.value)
+            if b_token.ttype in [sqlparse.tokens.Text.Whitespace.Newline, sqlparse.tokens.Text.Whitespace]:
+                continue
+            print(
+                f"analyze_sql value: 《{b_token.value}》  token ttype:《{b_token.ttype}》 ,is group 《{b_token.is_group}》")
+            # sql_tokens.append({"value": b_token.value, "ttype": b_token.ttype})
+            if b_token.is_group and "(SELECT" in b_token.value:
+                print("is_group",str(b_token.value))
+                print("tokens", b_token.value.tokens)
+                if b_token.value.startswith("(SELECT"):
+                    self.analyze_sql(str(b_token.value)[1:-1])
+                    print("is_group select", str(b_token.value))
+                
+            
+        return sql_tokens
 
     def analyze_sqls(self, sqllist):
         f_sqllist = self.format_sql(sqllist)
@@ -151,8 +165,12 @@ class get_sql_tables():
             if one_f_sql == "" or one_f_sql is None:
                 continue
             print("sql  --> ", one_f_sql)
-            self.analyze_sql(one_f_sql)
+            c = self.analyze_sql(one_f_sql)
+            print("c 》", c)
+
         return f_sqllist
+
 
 a = get_sql_tables()
 b = a.analyze_sqls([sql2])
+# b = a.analyze_sqls([sql3])
