@@ -2,10 +2,10 @@
 '''
 @Author: windyoung
 @Date: 2020-10-10 21:22:33
-LastEditTime: 2020-10-23 10:08:42
+LastEditTime: 2020-11-24 21:39:43
 LastEditors: windyoung
 @Description:
-FilePath: \migtool_view\MigrationStepViewer.py
+FilePath: \migtool_plugin\migtool_viewer\MigrationStepViewer.py
 @
 '''
 import yaml
@@ -13,7 +13,7 @@ import logging
 import os
 import re
 import tkinter
-from tkinter import StringVar, ttk
+from tkinter import StringVar, ttk,Scrollbar
 import tkinter.messagebox
 
 import cx_Oracle
@@ -42,6 +42,16 @@ class stepviewData():
 
     def check_project_id(self, project_id):
         sql = f''' SELECT COUNT(1) cnt
+        FROM MGF_PROJECT A
+        WHERE A.PROJECT_ID = :PROJECT_ID
+        AND A.STATE = 'A' '''
+        self.db_cur.execute(sql, {"PROJECT_ID": project_id})
+        res = self.db_cur.fetchall()[0][0]
+        # print(res)
+        return res
+
+    def get_project_info(self, project_id):
+        sql = f''' SELECT A.PROJECT_ID||'|'||A.PROJECT_NAME p_info
         FROM MGF_PROJECT A
         WHERE A.PROJECT_ID = :PROJECT_ID
         AND A.STATE = 'A' '''
@@ -262,7 +272,8 @@ class stepviewGui(tkinter.Frame):
         "点击 OK 按钮：1，检查   project_id的输入  ；2，检查项目状态 ;3, 绑定  project_id的输入 "
         # 1，检查   project_id的输入
         try:
-            project_id_ = int(self.ent_project_idstr.get())
+            project_id_ = str(self.ent_project_idstr.get())
+            project_id_ = int(project_id_.split("|")[0])
         except Exception as e:
             project_id_ = ""
         # 2，检查项目状态
@@ -280,16 +291,21 @@ class stepviewGui(tkinter.Frame):
                 self.allbtn_catg[i]["bg"] = 'green'
             # 3, 绑定  project_id的输入
             self.project_id = project_id_
+            # 4, 数据库连接写入配置文件
+            with open("./migstepviewer.cfg", 'w', encoding="utf-8") as fp:
+                yaml.safe_dump({"db_con": self.ent_db_con_str.get().strip(
+                ), "projectid": self.project_id}, fp)
+            # 5, 展示project 名字
+            namestr = self.db_inst.get_project_info(self.project_id)
+            # print(namestr)
+            self.strV_project_id.set(namestr)
+            # self.ent_project_idstr.setvar(namestr)
         else:
             self.ent_project_idstr["bg"] = "red"
             self.btn_project_id_lock["bg"] = "red"
             tkinter.messagebox.showerror(
                 'ERROR', 'project id check error', parent=self.root)
             self.root.focus_force()
-        #4, 数据库连接写入配置文件
-        with open("./migstepviewer.cfg", 'w', encoding="utf-8") as fp:
-            yaml.safe_dump({"db_con": self.ent_db_con_str.get().strip(
-            ), "projectid": self.ent_project_idstr.get().strip()}, fp)
 
     def btn_click_catg_btn(self, exec_order_id):
         "点击category按钮：1，清空下方的展示；2，获取 step_catg_id，没有steps的情况弹窗   3 返回 step_catg_id 4,更新展示全部的step "
@@ -322,14 +338,15 @@ class stepviewGui(tkinter.Frame):
 
     def show_ver(self):
         tkinter.messagebox.showinfo(
-            title=f'版本说明{self.ver}', icon=None, message="v0.1 工具基本功能完成\nv0.1.1 增加配置记忆\nv0.1.2 修复按键延后相应,增加版本提示", parent=self.root, type="ok")
+            title=f'版本说明{self.ver},{self.ver_date}', icon=None, message="v0.1 工具基本功能完成\nv0.1.1 增加配置记忆\nv0.1.2 修复按键延后相应,增加版本提示\nv0.1.3增加项目名称显示", parent=self.root, type="ok")
         self.root.focus_force()
 
     def draw_GUI(self):
         """
         """
         # 版本号，时间
-        self.ver = "0.1.2"
+        self.ver = "0.1.3"
+        self.ver_date = "2020-11-9"
 
         # 绘制主窗口
         self.root = tkinter.Tk()
@@ -367,14 +384,14 @@ class stepviewGui(tkinter.Frame):
             self.lblframe_input, text="Project id:")
         self.lbl_project_id.pack(side='left')
         self.ent_project_idstr = tkinter.Entry(
-            self.lblframe_input, width=21, textvariable=self.strV_project_id)
+            self.lblframe_input, width=30, textvariable=self.strV_project_id)
         self.strV_project_id.set("input project id here")
         self.ent_project_idstr.pack(side='left')
         self.btn_project_id_lock = tkinter.Button(
             self.lblframe_input, text="OK", state='disabled', command=self.btn_check_project)
         self.btn_project_id_lock.pack(side='left')
         self.lbl_ver_info = tkinter.Label(
-            self.lblframe_input, text=f"   VER: {self.ver}, 2020-10-23")
+            self.lblframe_input, text=f"   VER: {self.ver}, {self.ver_date}")
         self.lbl_ver_info.pack(side='right')
         # 读取配置文件
         self.rd_cfg()
@@ -421,9 +438,13 @@ class stepviewGui(tkinter.Frame):
         self.lblframe_step.pack(side='top', expand=True, fill='both')
         # # 一个Treeview展示 step的 执行顺序，stepid，名字，类型，状态（根据状态展示）
         # 左键选中一行 在 单个step的 中展示信息
-
+        # 增加滚动条
+        self.sbar_step =Scrollbar(self.lblframe_step,orient='vertical',width = 20,borderwidth=0)
+        self.sbar_step.pack(side='left', fill='y', expand=True)
+        #
         self.tree_allsteps = ttk.Treeview(self.lblframe_step, columns=[
-                                          "exec_order_id", "step_id", "step_name", "function_code", "state"], selectmode='browse', show='headings', height=35)
+                                          "exec_order_id", "step_id", "step_name", "function_code", "state"], selectmode='browse', show='headings', height=35, yscrollcommand=self.sbar_step.set)
+        self.sbar_step.config(command=self.tree_allsteps.yview)
         self.tree_allsteps.column('exec_order_id', width=5, anchor='w')
         self.tree_allsteps.column('step_id', width=20, anchor='w')
         self.tree_allsteps.column('step_name', width=260, anchor='w')
@@ -447,6 +468,8 @@ class stepviewGui(tkinter.Frame):
         # 配置位置和大小
         self.tree_allsteps.pack(side='left', fill='both', expand=True)
 
+
+
         # 绑定事件
         # 绑定点击 事件：单击离开 ==========
         self.tree_allsteps.bind("<ButtonRelease-1>", self.show_onestep)
@@ -468,7 +491,7 @@ class stepviewGui(tkinter.Frame):
             self.frm_onestep, width=80, height=40)
         # 配置位置和大小
         self.text_stepdetail.pack(
-            side='top', anchor='n', fill='both', expand=True)
+            side='top', anchor='n', fill='both', expand=False)
 
         # # 一个Treeview/WORD 展示step或者param 内容 ，一个列表展示 参数值(先不做)
         self.tree_onestep = ttk.Treeview(self.frm_onestep, columns=[
@@ -478,7 +501,7 @@ class stepviewGui(tkinter.Frame):
         self.tree_onestep.column('value',   width=200, anchor='w')
 
         self.tree_onestep.heading('step item', text='item',)
-        self.tree_onestep.heading('type',  text='get type')
+        self.tree_onestep.heading('type',  text='param type')
         self.tree_onestep.heading('value',  text='current value')
         # 配置位置和大小
         self.tree_onestep.pack(side='top', anchor='s',
