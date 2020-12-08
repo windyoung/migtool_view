@@ -2,21 +2,20 @@
 '''
 @Author: windyoung
 @Date: 2020-10-10 21:22:33
-LastEditTime: 2020-12-08 21:52:20
+LastEditTime: 2020-12-08 22:06:43
 LastEditors: windyoung
 @Description:
 FilePath: \migtool_viewer\MigrationStepViewer.py
-@
 '''
-import yaml
 import logging
 import os
 import re
 import tkinter
-from tkinter import StringVar, ttk,Scrollbar
 import tkinter.messagebox
+from tkinter import Scrollbar, StringVar, ttk
 
 import cx_Oracle
+import yaml
 
 
 class stepviewData():
@@ -198,7 +197,7 @@ class stepviewGui(tkinter.Frame):
         step_id = item_text[1]
         stepdetails = self.db_inst.get_step_detail_by_stepid(step_id)
         if len(stepdetails) == 1:
-            stepdetail = yaml.load(stepdetails[0])
+            stepdetail = yaml.full_load(stepdetails[0])
             # 展示 内容到 text
             # 先清除原内容
             self.text_stepdetail.delete(1.0, tkinter.END)
@@ -261,6 +260,7 @@ class stepviewGui(tkinter.Frame):
         "点击 connect 按钮：1，清空其他地方的展示；2，锁定 数据库连接串 self.migsever_db_constr  ;3，检查数据库是否可以连接 ;4,解锁项目id"
         # 1，清空其他地方的展示
         # self.strV_project_id.set("")
+        self.btn_search['state']="disabled"
         # 2，锁定 数据库连接串
         self.migsever_db_constr = self.ent_db_con_str.get()
         print(self.migsever_db_constr)
@@ -355,7 +355,7 @@ class stepviewGui(tkinter.Frame):
         self.btn_search['state'] = 'normal'
 
     def show_ver(self):
-        ver_text ="v0.1 工具基本功能完成\nv0.1.1 增加配置记忆\nv0.1.2 修复按键延后响应,增加版本提示\nv0.1.3增加项目名称显示\nv 0.1.4增加滚动条和搜索, 增加中文语言字符设置"
+        ver_text ="v0.1 工具基本功能完成\nv0.1.1 增加配置记忆\nv0.1.2 修复按键延后响应,增加版本提示\nv0.1.3增加项目名称显示\nv0.1.4增加滚动条和搜索, 增加中文语言字符设置"
         tkinter.messagebox.showinfo(
             title=f'版本说明{self.ver},{self.ver_date}', icon=None, message=ver_text, parent=self.root, type="ok")
         self.root.focus_force()
