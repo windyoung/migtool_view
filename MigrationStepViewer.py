@@ -2,7 +2,7 @@
 '''
 @Author: windyoung
 @Date: 2020-10-10 21:22:33
-LastEditTime: 2020-12-08 21:10:13
+LastEditTime: 2020-12-08 21:52:20
 LastEditors: windyoung
 @Description:
 FilePath: \migtool_viewer\MigrationStepViewer.py
@@ -32,9 +32,7 @@ class stepviewData():
         AND A.STATE = 'A' '''
         self.db_cur.execute(sql, {"PROJECT_ID": project_id})
         res = self.db_cur.fetchall()[0][0]
-        # print(res)
         return res
-        pass
 
     def init_db_con(self):
         self.db_con = cx_Oracle.connect(self.migsever_db_constr)
@@ -47,7 +45,6 @@ class stepviewData():
         AND A.STATE = 'A' '''
         self.db_cur.execute(sql, {"PROJECT_ID": project_id})
         res = self.db_cur.fetchall()[0][0]
-        # print(res)
         return res
 
     def get_project_info(self, project_id):
@@ -57,7 +54,6 @@ class stepviewData():
         AND A.STATE = 'A' '''
         self.db_cur.execute(sql, {"PROJECT_ID": project_id})
         res = self.db_cur.fetchall()[0][0]
-        # print(res)
         return res
 
     def get_mgf_catg_id(self, project_id, exec_order_id):
@@ -81,7 +77,6 @@ class stepviewData():
         sql = "SELECT a.func_par_list FROM MGF_MIG_FLOW_STEP A WHERE A.STEP_ID = :STEP_ID"
         res = []
         self.db_cur.execute(sql, {"STEP_ID": step_id})
-        # res = self.db_cur.fetchall()
         for row in self.db_cur:
             res.append(row[0].read())
         return res
@@ -100,10 +95,8 @@ class stepviewData():
     def get_param_cur_value(self, project_id, par_code):
         result = []
         sql_par_ver_code = "SELECT a.par_ver_code FROM MGF_PROJECT A WHERE A.PROJECT_ID = :PROJECT_ID "
-
         self.db_cur.execute(sql_par_ver_code, {"PROJECT_ID": project_id})
         sql_par_ver_code_res = self.db_cur.fetchall()
-        # print(sql_par_ver_code_res)
         if len(sql_par_ver_code_res) == 1:
             par_ver_code = sql_par_ver_code_res[0][0]
         else:
@@ -116,14 +109,12 @@ class stepviewData():
         self.db_cur.execute(
             sql, {"PROJECT_ID": project_id, "PAR_CODE": par_code})
         res = self.db_cur.fetchall()
-        # print("get_param_cur_value res", res)
         for row in res:
             # COMMENTS 以# 开头 用 par_ver_code  ，否则 用 Global
             if row[7][0] == "#" and row[0] == par_ver_code:
                 result.append(self.format_param_cur_value(row))
             elif row[0] == "Global":
                 result.append(self.format_param_cur_value(row))
-        # print("get_param_cur_value result", result)
         return result
         
     def search_step_detail(self,catg_id,keyword):
@@ -144,6 +135,7 @@ class stepviewData():
 
 class stepviewGui(tkinter.Frame):
     def __init__(self):
+        os.putenv("NLS_LANG","SIMPLIFIED CHINESE_CHINA.ZHS16GBK")
         self.migsever_db_constr = ""
         self.project_id = ""
         self.draw_GUI()
@@ -192,8 +184,6 @@ class stepviewGui(tkinter.Frame):
         for item in items:
             item_text = self.tree_allsteps.item(item, "values")
             if item_text[4] == 'DISABLE':
-                # self.tree_allsteps.item(item,background="black",foreground="white")
-                # self.tree_allsteps.grid_rowconfigure(self.tree_allsteps.index(item) ,background="black",foreground="white")
                 self.tree_allsteps.tag_configure(
                     'color', background="black", foreground="white")
 
@@ -202,14 +192,13 @@ class stepviewGui(tkinter.Frame):
         # 设置了单选，这里处理选中的一行
         item = self.tree_allsteps.selection()
         item_text = self.tree_allsteps.item(item, "values")
-        # print(item, item_text, type(item_text))  # 输出所选行的第一列的值
+        # 输出所选行的第一列的值
         if item_text == "":
             return False
         step_id = item_text[1]
         stepdetails = self.db_inst.get_step_detail_by_stepid(step_id)
         if len(stepdetails) == 1:
             stepdetail = yaml.load(stepdetails[0])
-            # print(stepdetail)
             # 展示 内容到 text
             # 先清除原内容
             self.text_stepdetail.delete(1.0, tkinter.END)
@@ -226,18 +215,14 @@ class stepviewGui(tkinter.Frame):
             # 处理参数
             # 获取TEXT的文本
             this_text = self.text_stepdetail.get('0.0', 'end')
-            # par=r"\$\{([a-zA-Z0-9]|_)+\}"
             par = r"\$\{(\w+)?\}"
-            # print(this_text)
             param_list = re.findall(par, this_text)
-            # print(param_list)
             params_res = []
             for i in param_list:
                 a = self.db_inst.get_param_cur_value(self.project_id, i)
                 if len(a) == 0:
                     continue
                 params_res.append(a[0])
-            # print(params_res)
             for i in params_res:
                 self.tree_onestep.insert('', 'end', values=i)
             return True
@@ -251,7 +236,6 @@ class stepviewGui(tkinter.Frame):
     def show_params(self, event):
         for item in self.tree_onestep.selection():
             item_text = self.tree_onestep.item(item, "values")
-            # print(item,item_text)
             self.text_stepdetail.insert(
                 "end", f"param [{item_text[0]}] : {item_text[2]} \n------------------------------->\n")
 
@@ -259,7 +243,6 @@ class stepviewGui(tkinter.Frame):
         catg_id=self.catg_id
         project_id=self.project_id
         keyword=self.strV_search_keyword.get()
-        # print( '=====',catg_id,  project_id, keyword)
         if keyword =="":
             return 0
         res=self.db_inst.search_step_detail(catg_id,keyword)
@@ -268,13 +251,11 @@ class stepviewGui(tkinter.Frame):
         items = self.tree_allsteps.get_children()
         for item in items:
             item_text = self.tree_allsteps.item(item, "values")
-            # print("item_text",item_text[1] ,item_text)
             if item_text[1] not in res:
                 self.tree_allsteps.delete(item) 
         items = self.tree_onestep.get_children()
         [self.tree_onestep.delete(item) for item in items]
         self.text_stepdetail.delete(1.0, tkinter.END)
-        # print(res)
 
     def btn_connect_db(self):
         "点击 connect 按钮：1，清空其他地方的展示；2，锁定 数据库连接串 self.migsever_db_constr  ;3，检查数据库是否可以连接 ;4,解锁项目id"
@@ -359,10 +340,8 @@ class stepviewGui(tkinter.Frame):
         self.clean_treeview_text()
         # 2 获取 step_catg_id，没有steps的情况弹窗
         try:
-            # project_id, exec_order_id = 10,10
             catg_id = self.db_inst.get_mgf_catg_id(project_id, exec_order_id)
             self.catg_id =catg_id
-            print("catg_id", catg_id)
         except Exception as e:
             print("ERROR IN get catg_id : {}".format(str(e)))
             tkinter.messagebox.showerror(
@@ -370,15 +349,15 @@ class stepviewGui(tkinter.Frame):
             catg_id = 0
         # 4,更新展示全部的step
         allsteps = self.db_inst.get_all_steps_by_catgid(catg_id)
-        # print(allsteps)
         self.filling_allsteps_data_in_treeview(allsteps)
         # 5 重置输入框
         self.strV_search_keyword.set("")
         self.btn_search['state'] = 'normal'
 
     def show_ver(self):
+        ver_text ="v0.1 工具基本功能完成\nv0.1.1 增加配置记忆\nv0.1.2 修复按键延后响应,增加版本提示\nv0.1.3增加项目名称显示\nv 0.1.4增加滚动条和搜索, 增加中文语言字符设置"
         tkinter.messagebox.showinfo(
-            title=f'版本说明{self.ver},{self.ver_date}', icon=None, message="v0.1 工具基本功能完成\nv0.1.1 增加配置记忆\nv0.1.2 修复按键延后响应,增加版本提示\nv0.1.3增加项目名称显示\nv0.1.4增加滚动条和搜索", parent=self.root, type="ok")
+            title=f'版本说明{self.ver},{self.ver_date}', icon=None, message=ver_text, parent=self.root, type="ok")
         self.root.focus_force()
 
     def draw_GUI(self):
@@ -387,14 +366,12 @@ class stepviewGui(tkinter.Frame):
         # 版本号，时间
         self.ver = "0.1.4"
         self.ver_date = "2020-12-08"
-
         # 绘制主窗口
         self.root = tkinter.Tk()
         self.root.title(f"Migration Steps Viewer v{self.ver}")
         self.root.geometry("1210x900+10+10")
         self.root.resizable(1, 1)
         self.show_ver()
-
         # 参数绑定
         self.dft_bg = self.root.cget('background')
         self.strV_db_con_str = StringVar()
@@ -414,7 +391,6 @@ class stepviewGui(tkinter.Frame):
             self.lblframe_input, width=45, textvariable=self.strV_db_con_str)
         self.strV_db_con_str.set(
             "mig_pool/smart@10.45.82.28:1521/orcl input mig database connection string here")
-        # self.strV_db_con_str.set("zj_mig/smart@10.45.82.28:1521/orcl")
         self.ent_db_con_str.pack(side='left')
         self.btn_con_db = tkinter.Button(
             self.lblframe_input, text="Test&Connect", command=self.btn_connect_db)
@@ -439,9 +415,7 @@ class stepviewGui(tkinter.Frame):
         # 7个按钮展示不同的catg
         self.lblframe_catg = tkinter.LabelFrame(
             self.root, text="choose step category", padx=5, pady=5)
-        # self.lblframe_catg.place(x=5, y=65, width=1200)
         self.lblframe_catg.pack(side='top', expand=False, fill='x')
-
         # 点击时 1，清空下方的展示；2，没有steps的情况->提示 ， 3,更新展示全部的step
         self.btn_cate1 = tkinter.Button(
             self.lblframe_catg, text="CATG 1: Input", bg="lightgrey", state='disabled', command=lambda: self.btn_click_catg_btn(1))
@@ -477,29 +451,22 @@ class stepviewGui(tkinter.Frame):
         self.ent_search= tkinter.Entry(self.lblframe_catg,width=30, textvariable=self.strV_search_keyword)
         self.ent_search.pack(side='right')
         self.btn_search['state']="disabled"
-
-
         # 结果展示
         self.lblframe_step = tkinter.LabelFrame(
             self.root, text="step infomation", padx=5, pady=5)
-        # self.lblframe_step.place(x=5, y=125, width=1200)
         self.lblframe_step.pack(side='top', expand=True, fill='both')
         # # 一个Treeview展示 step的 执行顺序，stepid，名字，类型，状态（根据状态展示）
         # 左键选中一行 在 单个step的 中展示信息
         # 增加滚动条
         self.sbar_step =Scrollbar(self.lblframe_step,orient='vertical',width = 20,borderwidth=0)
         self.sbar_step.pack(side='left', fill='y' )
-        
         self.tree_allsteps = ttk.Treeview(self.lblframe_step, columns=[
                                           "exec_order_id", "step_id", "step_name", "function_code", "state"], selectmode='browse', show='headings', height=35)
-        
-        
         self.tree_allsteps.column('exec_order_id', width=5, anchor='w')
         self.tree_allsteps.column('step_id', width=20, anchor='w')
         self.tree_allsteps.column('step_name', width=260, anchor='w')
         self.tree_allsteps.column('function_code', width=60, anchor='w')
         self.tree_allsteps.column('state', width=25, anchor='w')
-
         self.tree_allsteps.heading('exec_order_id', text='exec_order_id')
         self.tree_allsteps.heading('step_id', text='step_id')
         self.tree_allsteps.heading('step_name', text='step_name')
@@ -513,17 +480,10 @@ class stepviewGui(tkinter.Frame):
             '', 'end', values=("0", "1", "1", "1", 'finish'))
         for i in tree1:
             self.tree_allsteps.insert('', 'end', values=i)
-
         # 配置位置和大小
-        
-        
         self.tree_allsteps.pack(side='left', fill='both', expand=True)
         self.tree_allsteps.config(yscrollcommand=self.sbar_step.set)
         self.sbar_step.config(command=self.tree_allsteps.yview)
-        # self.tree_allsteps.config(command=self.sbar_step.yview,width=16)
-
-
-
         # 绑定事件
         # 绑定点击 事件：单击离开 ==========
         self.tree_allsteps.bind("<ButtonRelease-1>", self.show_onestep)
@@ -534,9 +494,7 @@ class stepviewGui(tkinter.Frame):
         # self.tree_allsteps.bind("<Down>", self.show_onestep)
         # 绑定点击 事件：选中Treeview ==========
         self.tree_allsteps.bind("<<TreeviewSelect>>", self.show_onestep)
-
         self.tree_allsteps["selectmode"] = "none"
-
         # 使用frame区分
         self.frm_onestep = tkinter.Frame(self.lblframe_step)
         self.frm_onestep.pack(side='left', fill='both', expand=True)
@@ -546,7 +504,6 @@ class stepviewGui(tkinter.Frame):
         # 配置位置和大小
         self.text_stepdetail.pack(
             side='top', anchor='n', fill='both', expand=False)
-
         # # 一个Treeview/WORD 展示step或者param 内容 ，一个列表展示 参数值(先不做)
         self.tree_onestep = ttk.Treeview(self.frm_onestep, columns=[
                                          "step item", "type", "value"], show='headings', selectmode='extended', height=5)
@@ -562,9 +519,7 @@ class stepviewGui(tkinter.Frame):
         # 点击选中值
         self.tree_onestep.bind("<ButtonRelease-1>", self.show_params)
         self.tree_onestep.bind("<<TreeviewSelect>>", self.show_params)
-
         self.root.mainloop()
-
 
 if __name__ == '__main__':
     logging.basicConfig(
