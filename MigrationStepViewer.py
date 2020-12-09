@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
-'''
+
+r'''
 @Author: windyoung
 @Date: 2020-10-10 21:22:33
-LastEditTime: 2020-12-09 09:32:57
+LastEditTime: 2020-12-09 09:43:13
 LastEditors: windyoung
 @Description:
 FilePath: \migtool_viewer\MigrationStepViewer.py
 '''
+
 import logging
 import os,sys
 import re
@@ -465,7 +467,7 @@ class stepviewGui(tkinter.Frame):
         # # 一个Treeview展示 step的 执行顺序，stepid，名字，类型，状态（根据状态展示）
         # 左键选中一行 在 单个step的 中展示信息
         # 增加滚动条
-        self.sbar_step =Scrollbar(self.lblframe_step,orient='vertical',width = 20,borderwidth=0)
+        self.sbar_step =Scrollbar(self.lblframe_step,orient='vertical',width = 15,borderwidth=0)
         self.sbar_step.pack(side='left', fill='y' )
         self.tree_allsteps = ttk.Treeview(self.lblframe_step, columns=[
                                           "exec_order_id", "step_id", "step_name", "function_code", "state"], selectmode='browse', show='headings', height=35)
@@ -507,7 +509,7 @@ class stepviewGui(tkinter.Frame):
         self.frm_onestep.pack(side='left', fill='both', expand=True)
         # #  或者用ScrolledText 展示 step 内容
         self.text_stepdetail = tkinter.Text(
-            self.frm_onestep, width=80, height=40)
+            self.frm_onestep, width=30, height=40)
         # 配置位置和大小
         self.text_stepdetail.pack(
             side='top', anchor='n', fill='both', expand=False)
