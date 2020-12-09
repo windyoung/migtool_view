@@ -2,13 +2,13 @@
 '''
 @Author: windyoung
 @Date: 2020-10-10 21:22:33
-LastEditTime: 2020-12-08 22:06:43
+LastEditTime: 2020-12-09 09:32:57
 LastEditors: windyoung
 @Description:
 FilePath: \migtool_viewer\MigrationStepViewer.py
 '''
 import logging
-import os
+import os,sys
 import re
 import tkinter
 import tkinter.messagebox
@@ -360,6 +360,10 @@ class stepviewGui(tkinter.Frame):
             title=f'版本说明{self.ver},{self.ver_date}', icon=None, message=ver_text, parent=self.root, type="ok")
         self.root.focus_force()
 
+    def resource_path(self,file_):
+        basepath_ = getattr(sys,'_MEIPASS',os.path.dirname(os.path.abspath(__file__)))
+        return os.path.join(basepath_,file_) 
+        
     def draw_GUI(self):
         """
         """
@@ -371,6 +375,9 @@ class stepviewGui(tkinter.Frame):
         self.root.title(f"Migration Steps Viewer v{self.ver}")
         self.root.geometry("1210x900+10+10")
         self.root.resizable(1, 1)
+        self.root.iconbitmap(self.resource_path('./logo.ico'))
+        # self.root.iconbitmap('./logo.ico')
+
         self.show_ver()
         # 参数绑定
         self.dft_bg = self.root.cget('background')
