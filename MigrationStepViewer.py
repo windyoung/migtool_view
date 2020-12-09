@@ -526,7 +526,7 @@ class stepviewGui(tkinter.Frame):
         self.tree_onestep.pack(side='top', anchor='s',
                                fill='both', expand=True)
         # 点击选中值
-        self.tree_onestep.bind("<ButtonRelease-1>", self.show_params)
+        # self.tree_onestep.bind("<ButtonRelease-1>", self.show_params)
         self.tree_onestep.bind("<<TreeviewSelect>>", self.show_params)
         self.root.mainloop()
 
