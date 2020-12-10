@@ -10,8 +10,9 @@ FilePath: \migtool_viewer\MigrationStepViewer.py
 '''
 
 import logging
-import os,sys
+import os
 import re
+import sys
 import tkinter
 import tkinter.messagebox
 from tkinter import Scrollbar, StringVar, ttk
@@ -75,11 +76,12 @@ class stepviewData():
         return res
 
     def get_step_detail_by_stepid(self, step_id):
-        sql = "SELECT a.func_par_list FROM MGF_MIG_FLOW_STEP A WHERE A.STEP_ID = :STEP_ID"
+        sql = "SELECT A.FUNC_PAR_LIST, A.STEP_NAME ,A.STATE ,A.FUNCTION_CODE,A.BACKGROUND,A.FLOW,A.DEPEND_FLOW FROM MGF_MIG_FLOW_STEP A WHERE A.STEP_ID = :STEP_ID"
         res = []
         self.db_cur.execute(sql, {"STEP_ID": step_id})
         for row in self.db_cur:
-            res.append(row[0].read())
+            res.append([row[0].read(), row[1], row[2],
+                        row[3], row[4], row[5], row[6]])
         return res
 
     def format_param_cur_value(self, rec):
@@ -117,26 +119,27 @@ class stepviewData():
             elif row[0] == "Global":
                 result.append(self.format_param_cur_value(row))
         return result
-        
-    def search_step_detail(self,catg_id,keyword):
-        if keyword =="":
+
+    def search_step_detail(self, catg_id, keyword):
+        if keyword == "":
             return 0
-        s_CATG_ID =catg_id
-        s_KEYWORD=f"{keyword}".upper()
-        param_list={"STEP_CATG_ID": s_CATG_ID,"s_KEYWORD":s_KEYWORD}
+        s_CATG_ID = catg_id
+        s_KEYWORD = f"{keyword}".upper()
+        param_list = {"STEP_CATG_ID": s_CATG_ID, "s_KEYWORD": s_KEYWORD}
         print(param_list)
         sql = """SELECT A.STEP_ID   FROM MGF_MIG_FLOW_STEP A WHERE (REGEXP_LIKE(UPPER(A.STEP_NAME), :s_KEYWORD ) 
                   OR REGEXP_LIKE(UPPER(A.FUNC_PAR_LIST), :s_KEYWORD )) AND A.STEP_CATG_ID = :STEP_CATG_ID   """
-        self.db_cur.execute(sql,param_list )
-        res_= self.db_cur.fetchall()
-        res=[]
+        self.db_cur.execute(sql, param_list)
+        res_ = self.db_cur.fetchall()
+        res = []
         for row in res_:
             res.append(str(row[0]))
         return res
 
+
 class stepviewGui(tkinter.Frame):
     def __init__(self):
-        os.putenv("NLS_LANG","SIMPLIFIED CHINESE_CHINA.ZHS16GBK")
+        os.putenv("NLS_LANG", "SIMPLIFIED CHINESE_CHINA.ZHS16GBK")
         self.migsever_db_constr = ""
         self.project_id = ""
         self.draw_GUI()
@@ -179,14 +182,15 @@ class stepviewGui(tkinter.Frame):
     def filling_allsteps_data_in_treeview(self, data):
         # 插入数据
         for i in data:
-            self.tree_allsteps.insert('', 'end', values=i, tags=('color',))
-        # 如果状态为 DISABLE ， 修改背景色
-        items = self.tree_allsteps.get_children()
-        for item in items:
-            item_text = self.tree_allsteps.item(item, "values")
-            if item_text[4] == 'DISABLE':
+            # 如果状态为 DISABLE ， 修改背景色
+            if i[4] == 'DISABLE':
                 self.tree_allsteps.tag_configure(
-                    'color', background="black", foreground="white")
+                    'disabledstep', background="black", foreground="white")
+                # 定义disable的 值的格式
+                self.tree_allsteps.insert(
+                    '', 'end', values=i, tags=('disabledstep',))
+            else:
+                self.tree_allsteps.insert('', 'end', values=i, )
 
     def show_onestep(self, event):
         "从选中获取stepid 在 stepdetail里 展示内容"
@@ -197,22 +201,52 @@ class stepviewGui(tkinter.Frame):
         if item_text == "":
             return False
         step_id = item_text[1]
-        stepdetails = self.db_inst.get_step_detail_by_stepid(step_id)
-        if len(stepdetails) == 1:
-            stepdetail = yaml.full_load(stepdetails[0])
+        res_ = self.db_inst.get_step_detail_by_stepid(step_id)
+        # A.FUNC_PAR_LIST, A.STEP_NAME ,A.STATE ,A.FUNCTION_CODE,A.BACKGROUND,A.FLOW,A.DEPEND_FLOW
+        stepdetails = res_[0][0]
+        stepname = res_[0][1]
+        state = res_[0][2]
+        funccode = res_[0][3]
+        background = res_[0][4]
+        flow = res_[0][5]
+        depflow = res_[0][6]
+        if len(res_) == 1:
+            stepdetail = yaml.full_load(stepdetails)
             # 展示 内容到 text
             # 先清除原内容
             self.text_stepdetail.delete(1.0, tkinter.END)
             items = self.tree_onestep.get_children()
             [self.tree_onestep.delete(item) for item in items]
             # 插入 具体信息
+            # 如果状态为 DISABLE ， 修改背景色
+            if state == 'DISABLE':
+                self.text_stepdetail.insert(
+                    "end", f"DISABLED STEP, step id[ {step_id} ], name [ {stepname} ] \n", 'disabledstep')
+            else:
+                self.text_stepdetail.insert(
+                    "end", f"step id[ {step_id} ], name [ {stepname} ] \n")
             self.text_stepdetail.insert(
-                "end", f"step [{step_id}] detail infomation\n------------------------------->\n")
+                "end", f"FUNCTION_CODE[{funccode}],BACKGROUND[{background}],FLOW[{flow}],DEPEND_FLOW[{depflow}]  \n")
+            self.text_stepdetail.insert(
+                "end", ">>>>>>>>>>>>>>>>>>>detail infomation>>>>>>>>>>>>>>>>>>>>>>>>>>\n", 'tag1')
             for key in stepdetail:
-                self.text_stepdetail.insert("end",
-                                            f"item--> {str(key).upper()}:\nvalue--> {str(stepdetail[key])} \n------------------------------->\n")
+                key_ = str(key).upper()
+                values_ = stepdetail[key]
+                # print("values_", values_)
+                if key_ == 'TABLE_NAME_LIST':
+                    values_ = "\n{}".format(str(values_).replace(',', '\n'))
+                elif key_ == 'RES_LIST':
+                    # print("values_ reformt ", type(values_), len(values_))
+                    values_ = "\n{}".format("\n".join(values_))
+                elif key_ == 'TABLE_LIST':
+                    # print("values_ reformt ",type(values_),len(values_))
+                    values_ = "\n{}".format("\n".join(values_))
+                self.text_stepdetail.insert(
+                    "end", f"item--> {key_}:\nvalue--> {values_} \n")
+                self.text_stepdetail.insert(
+                    "end", "<------------------------------->\n", 'tag2')
             self.text_stepdetail.insert(
-                "end", "\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
+                "end", ">>>>>>>>>>>>>>>>>>> params infomation>>>>>>>>>>>>>>>>>>>>>>>>>>\n", 'tag1')
             # 处理参数
             # 获取TEXT的文本
             this_text = self.text_stepdetail.get('0.0', 'end')
@@ -230,7 +264,7 @@ class stepviewGui(tkinter.Frame):
         else:
             print("ERROR IN get step detail ")
             tkinter.messagebox.showerror(
-                'ERROR', f"can not get step detail \ncheck step id {step_id} ", parent=self.root)
+                'ERROR', f"can not get step detail \ncheck step id {step_id}  ", parent=self.root)
             self.root.focus_force()
             return False
 
@@ -238,22 +272,24 @@ class stepviewGui(tkinter.Frame):
         for item in self.tree_onestep.selection():
             item_text = self.tree_onestep.item(item, "values")
             self.text_stepdetail.insert(
-                "end", f"param [{item_text[0]}] : {item_text[2]} \n------------------------------->\n")
+                "end", f"param [{item_text[0]}] : {item_text[2]} \n")
+            self.text_stepdetail.insert(
+                "end", "------------------------------->\n", 'tag2')
 
     def search_catg(self,):
-        catg_id=self.catg_id
-        project_id=self.project_id
-        keyword=self.strV_search_keyword.get()
-        if keyword =="":
+        catg_id = self.catg_id
+        project_id = self.project_id
+        keyword = self.strV_search_keyword.get()
+        if keyword == "":
             return 0
-        res=self.db_inst.search_step_detail(catg_id,keyword)
-        if res==0:
+        res = self.db_inst.search_step_detail(catg_id, keyword)
+        if res == 0:
             return 0
         items = self.tree_allsteps.get_children()
         for item in items:
             item_text = self.tree_allsteps.item(item, "values")
             if item_text[1] not in res:
-                self.tree_allsteps.delete(item) 
+                self.tree_allsteps.delete(item)
         items = self.tree_onestep.get_children()
         [self.tree_onestep.delete(item) for item in items]
         self.text_stepdetail.delete(1.0, tkinter.END)
@@ -262,7 +298,7 @@ class stepviewGui(tkinter.Frame):
         "点击 connect 按钮：1，清空其他地方的展示；2，锁定 数据库连接串 self.migsever_db_constr  ;3，检查数据库是否可以连接 ;4,解锁项目id"
         # 1，清空其他地方的展示
         # self.strV_project_id.set("")
-        self.btn_search['state']="disabled"
+        self.btn_search['state'] = "disabled"
         # 2，锁定 数据库连接串
         self.migsever_db_constr = self.ent_db_con_str.get()
         print(self.migsever_db_constr)
@@ -343,7 +379,7 @@ class stepviewGui(tkinter.Frame):
         # 2 获取 step_catg_id，没有steps的情况弹窗
         try:
             catg_id = self.db_inst.get_mgf_catg_id(project_id, exec_order_id)
-            self.catg_id =catg_id
+            self.catg_id = catg_id
         except Exception as e:
             print("ERROR IN get catg_id : {}".format(str(e)))
             tkinter.messagebox.showerror(
@@ -356,31 +392,27 @@ class stepviewGui(tkinter.Frame):
         self.strV_search_keyword.set("")
         self.btn_search['state'] = 'normal'
 
-    def show_ver(self):
-        ver_text ="v0.1 工具基本功能完成\nv0.1.1 增加配置记忆\nv0.1.2 修复按键延后响应,增加版本提示\nv0.1.3增加项目名称显示\nv0.1.4增加滚动条和搜索, 增加中文语言字符设置"
+    def show_ver(self,event):
+        ver_text = "v0.1 工具基本功能完成\nv0.1.1增加配置记忆\nv0.1.2修复按键延后响应,增加版本提示\nv0.1.3增加项目名称显示\nv0.1.4增加滚动条和搜索, 增加中文语言字符设置\nv0.1.5增加分隔符颜色区分和stepname显示,增加value的格式化\nv0.1.6修复step状态显示，增加step详情,修改版本提示方式"
         tkinter.messagebox.showinfo(
             title=f'版本说明{self.ver},{self.ver_date}', icon=None, message=ver_text, parent=self.root, type="ok")
         self.root.focus_force()
 
-    def resource_path(self,file_):
-        basepath_ = getattr(sys,'_MEIPASS',os.path.dirname(os.path.abspath(__file__)))
-        return os.path.join(basepath_,file_) 
-        
+    def resource_path(self, file_):
+        basepath_ = getattr(sys, '_MEIPASS', os.path.dirname(
+            os.path.abspath(__file__)))
+        return os.path.join(basepath_, file_)
+
     def draw_GUI(self):
-        """
-        """
         # 版本号，时间
-        self.ver = "0.1.4"
-        self.ver_date = "2020-12-08"
+        self.ver = "0.1.6"
+        self.ver_date = "2020-12-10"
         # 绘制主窗口
         self.root = tkinter.Tk()
         self.root.title(f"Migration Steps Viewer v{self.ver}")
-        self.root.geometry("1210x900+10+10")
+        self.root.geometry("1210x900+60+30")
         self.root.resizable(1, 1)
         self.root.iconbitmap(self.resource_path('./logo.ico'))
-        # self.root.iconbitmap('./logo.ico')
-
-        self.show_ver()
         # 参数绑定
         self.dft_bg = self.root.cget('background')
         self.strV_db_con_str = StringVar()
@@ -417,8 +449,9 @@ class stepviewGui(tkinter.Frame):
             self.lblframe_input, text="OK", state='disabled', command=self.btn_check_project)
         self.btn_project_id_lock.pack(side='left')
         self.lbl_ver_info = tkinter.Label(
-            self.lblframe_input, text=f"   VER: {self.ver}, {self.ver_date}")
+            self.lblframe_input, text=f"   VER: {self.ver}, {self.ver_date}",)
         self.lbl_ver_info.pack(side='right')
+        self.lbl_ver_info.bind("<Button-1>",self.show_ver)
         # 读取配置文件
         self.rd_cfg()
         # 7个按钮展示不同的catg
@@ -457,9 +490,10 @@ class stepviewGui(tkinter.Frame):
         self.btn_search = tkinter.Button(
             self.lblframe_catg, text="search", command=self.search_catg)
         self.btn_search.pack(side='right')
-        self.ent_search= tkinter.Entry(self.lblframe_catg,width=30, textvariable=self.strV_search_keyword)
+        self.ent_search = tkinter.Entry(
+            self.lblframe_catg, width=30, textvariable=self.strV_search_keyword)
         self.ent_search.pack(side='right')
-        self.btn_search['state']="disabled"
+        self.btn_search['state'] = "disabled"
         # 结果展示
         self.lblframe_step = tkinter.LabelFrame(
             self.root, text="step infomation", padx=5, pady=5)
@@ -467,8 +501,9 @@ class stepviewGui(tkinter.Frame):
         # # 一个Treeview展示 step的 执行顺序，stepid，名字，类型，状态（根据状态展示）
         # 左键选中一行 在 单个step的 中展示信息
         # 增加滚动条
-        self.sbar_step =Scrollbar(self.lblframe_step,orient='vertical',width = 15,borderwidth=0)
-        self.sbar_step.pack(side='left', fill='y' )
+        self.sbar_step = Scrollbar(
+            self.lblframe_step, orient='vertical', width=15, borderwidth=0)
+        self.sbar_step.pack(side='left', fill='y')
         self.tree_allsteps = ttk.Treeview(self.lblframe_step, columns=[
                                           "exec_order_id", "step_id", "step_name", "function_code", "state"], selectmode='browse', show='headings', height=35)
         self.tree_allsteps.column('exec_order_id', width=5, anchor='w')
@@ -491,8 +526,10 @@ class stepviewGui(tkinter.Frame):
             self.tree_allsteps.insert('', 'end', values=i)
         # 配置位置和大小
         self.tree_allsteps.pack(side='left', fill='both', expand=True)
+        # 滚动条
         self.tree_allsteps.config(yscrollcommand=self.sbar_step.set)
         self.sbar_step.config(command=self.tree_allsteps.yview)
+
         # 绑定事件
         # 绑定点击 事件：单击离开 ==========
         self.tree_allsteps.bind("<ButtonRelease-1>", self.show_onestep)
@@ -525,10 +562,36 @@ class stepviewGui(tkinter.Frame):
         # 配置位置和大小
         self.tree_onestep.pack(side='top', anchor='s',
                                fill='both', expand=True)
+        # 修改内容显示的格式， 申明一个tag,在a位置使用
+        self.text_stepdetail.tag_add('tag1', 'end')
+        self.text_stepdetail.tag_add('tag2', 'end')
+        self.text_stepdetail.tag_add('disabledstep', 'end')
+        # 设置tag即插入文字的大小,颜色等
+        self.text_stepdetail.tag_config('tag1', foreground='blue')
+        self.text_stepdetail.tag_config('tag2', foreground='skyblue')
+        self.text_stepdetail.tag_config(
+            'disabledstep', foreground='white', background='black')
+
         # 点击选中值
         # self.tree_onestep.bind("<ButtonRelease-1>", self.show_params)
         self.tree_onestep.bind("<<TreeviewSelect>>", self.show_params)
+
+        def fixed_map(option):
+            # Fix for setting text colour for Tkinter 8.6.9
+            # From: https://core.tcl.tk/tk/info/509cafafae
+            #
+            # Returns the style map for 'option' with any styles starting with
+            # ('!disabled', '!selected', ...) filtered out.
+
+            # style.map() returns an empty list for missing options, so this
+            # should be future-safe.
+            return [elm for elm in style.map('Treeview', query_opt=option) if
+                    elm[:2] != ('!disabled', '!selected')]
+        style = ttk.Style()
+        style.map('Treeview', foreground=fixed_map('foreground'),
+                  background=fixed_map('background'))
         self.root.mainloop()
+
 
 if __name__ == '__main__':
     logging.basicConfig(
