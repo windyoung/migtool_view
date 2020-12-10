@@ -241,6 +241,9 @@ class stepviewGui(tkinter.Frame):
                 elif key_ == 'TABLE_LIST':
                     # print("values_ reformt ",type(values_),len(values_))
                     values_ = "\n{}".format("\n".join(values_))
+                elif key_ == 'TRIGGER_LIST':
+                    # print("values_ reformt ",type(values_),len(values_))
+                    values_ = "\n{}".format("\n".join(values_))
                 self.text_stepdetail.insert(
                     "end", f"item--> {key_}:\nvalue--> {values_} \n")
                 self.text_stepdetail.insert(
@@ -393,7 +396,14 @@ class stepviewGui(tkinter.Frame):
         self.btn_search['state'] = 'normal'
 
     def show_ver(self,event):
-        ver_text = "v0.1 工具基本功能完成\nv0.1.1增加配置记忆\nv0.1.2修复按键延后响应,增加版本提示\nv0.1.3增加项目名称显示\nv0.1.4增加滚动条和搜索, 增加中文语言字符设置\nv0.1.5增加分隔符颜色区分和stepname显示,增加value的格式化\nv0.1.6修复step状态显示，增加step详情,修改版本提示方式"
+    # Submit requirements and bugs to 'zhu.jian@iwhalecloud.com'
+        ver_text = '''v0.1 工具基本功能完成
+v0.1.1增加配置记忆
+v0.1.2修复按键延后响应,增加版本提示
+v0.1.3增加项目名称显示
+v0.1.4增加滚动条和搜索, 增加中文语言字符设置
+v0.1.5增加分隔符颜色区分和stepname显示,增加value的格式化
+v0.1.6修复step状态显示，增加step详情信息,修改版本提示方式,TRIGGER_LIST展示格式'''
         tkinter.messagebox.showinfo(
             title=f'版本说明{self.ver},{self.ver_date}', icon=None, message=ver_text, parent=self.root, type="ok")
         self.root.focus_force()
