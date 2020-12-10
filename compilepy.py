@@ -2,7 +2,7 @@
 '''
 Author: windyoung
 Date: 2020-12-09 00:41:15
-LastEditTime: 2020-12-10 10:37:58
+LastEditTime: 2020-12-10 11:57:39
 LastEditors: windyoung
 Description: 
 FilePath: \migtool_viewer\compilepy.py
@@ -19,6 +19,7 @@ def base64ico():
 def compile2exe():
     import os
     spec_="""# -*- mode: python ; coding: utf-8 -*-
+# -*- mode: python ; coding: utf-8 -*-
 block_cipher = None
 a = Analysis(['MigrationStepViewer.py'],
              pathex=['D:\\apps\\py_work\\migtool_plugin\\migtool_viewer'],
@@ -47,11 +48,13 @@ exe = EXE(pyz,
           upx=True,
           upx_exclude=[],
           runtime_tmpdir=None,
-          console=False )
+          console=False,
+          icon='logo.ico' )
+
 """
     change_root ="D:"
     cd_path = r"cd D:\apps\py_work\migtool_plugin\migtool_viewer"
-    compile_py = r"pyinstaller.exe -i ./logo.ico -F -w .\MigrationStepViewer.spec"
+    compile_py = r"pyinstaller.exe -i ./logo.ico -F -w .\MigrationStepViewer.spec --onefile"
     os.system(change_root)
     os.system(cd_path)
     os.system(compile_py)
