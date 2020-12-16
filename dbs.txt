@@ -1,0 +1,4 @@
+ mysql+pymysql://mig_cc:mig_cc2020@10.159.0.132:3307/mig_tool
+ oracle://mig_pool:smart@10.45.82.28:1521/orcl
+  mig_pool/smart@10.45.82.28:1521/orcl
+ 

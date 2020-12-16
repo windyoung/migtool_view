@@ -3,10 +3,10 @@
 '''
 @Author: windyoung
 @Date: 2020-10-10 21:22:33
-LastEditTime: 2020-12-16 01:03:32
+LastEditTime: 2020-12-15 22:55:26
 LastEditors: windyoung
 @Description:
-FilePath: \migtool_plugin\migtool_viewer\MigrationStepViewer.py
+FilePath: \migtool_plugin\migtool_viewer\MigrationStepViewer_oracle.py
 '''
 
 import logging
@@ -15,10 +15,9 @@ import re
 import sys
 import tkinter
 import tkinter.messagebox
-from tkinter import Scrollbar, StringVar, ttk, filedialog
+from tkinter import Scrollbar, StringVar, ttk,filedialog
 
 import cx_Oracle
-import pymysql
 import yaml
 import records
 
@@ -29,76 +28,49 @@ class stepviewData():
         self.init_db_con()
         pass
 
-    def reformat_rows(self,rows:list):
-        newrows=[]
-        for onerow in rows:
-            newonerow={}
-            for key in onerow:
-                value=onerow[key]
-                newkey = str(key).upper()
-                newonerow[newkey] = value
-            newrows.append(newonerow)
-        return newrows
-
     def get_all_steps_for_exporter(self, project_id):
         sql = f''' SELECT COUNT(1) cnt
         FROM MGF_PROJECT A
         WHERE A.PROJECT_ID = :PROJECT_ID
         AND A.STATE = 'A' '''
-        # self.db_cur.execute(sql, {"PROJECT_ID": project_id})
-        # res = self.db_cur.fetchall()[0][0]
-        res_ = self.db_cur.query(sql, **{"PROJECT_ID": project_id})
-        res_=self.reformat_rows(res_.as_dict())
-        res = res_[0]['CNT']
+        self.db_cur.execute(sql, {"PROJECT_ID": project_id})
+        res = self.db_cur.fetchall()[0][0]
         return res
 
     def init_db_con(self):
-        # oracle
-        # self.db_con = cx_Oracle.connect(self.migsever_db_constr)
-        # self.db_cur = self.db_con.cursor()
-        # records
-        self.db_cur = records.Database(self.migsever_db_constr)
+        # oracle 
+        self.db_con = cx_Oracle.connect(self.migsever_db_constr)
+        self.db_cur = self.db_con.cursor()
+ 
 
-    def init_db_con_ora(self, migsever_db_constr):
-        # oracle
+    def init_db_con_ora(self,migsever_db_constr):
+        # oracle 
         self.db_con = cx_Oracle.connect(migsever_db_constr)
         self.db_cur = self.db_con.cursor()
-
+ 
+        
     def check_project_id(self, project_id):
         sql = f''' SELECT COUNT(1) cnt
         FROM MGF_PROJECT A
         WHERE A.PROJECT_ID = :PROJECT_ID
         AND A.STATE = 'A' '''
-        # self.db_cur.execute(sql, {"PROJECT_ID": project_id})
-        # res = self.db_cur.fetchall()[0][0]
-        res_ = self.db_cur.query(sql, **{"PROJECT_ID": project_id})
-        res_=self.reformat_rows(res_.as_dict())
-        res = res_[0]['CNT']
+        self.db_cur.execute(sql, {"PROJECT_ID": project_id})
+        res = self.db_cur.fetchall()[0][0]
         return res
 
     def get_project_info(self, project_id):
-        sql = f''' SELECT A.PROJECT_ID , A.PROJECT_NAME  
+        sql = f''' SELECT A.PROJECT_ID||'|'||A.PROJECT_NAME  p_info
         FROM MGF_PROJECT A
         WHERE A.PROJECT_ID = :PROJECT_ID
         AND A.STATE = 'A' '''
-        # self.db_cur.execute(sql, {"PROJECT_ID": project_id})
-        # res = self.db_cur.fetchall()[0][0]
-        res_ = self.db_cur.query(sql, **{"PROJECT_ID": project_id})
-        res_=self.reformat_rows(res_.as_dict())
-        print("get_project_info", res_)
-        project_id_ = res_[0]['PROJECT_ID']
-        project_name_ = res_[0]['PROJECT_NAME']
-        res = f"{project_id_}|{project_name_}"
+        self.db_cur.execute(sql, {"PROJECT_ID": project_id})
+        res = self.db_cur.fetchall()[0][0]
         return res
 
     def get_mgf_catg_id(self, project_id, exec_order_id):
         sql = "SELECT a.step_catg_id FROM MGF_MIG_FLOW_CATG A  WHERE A.PROJECT_ID =  :PROJECT_ID  AND A.EXEC_ORDER_ID = :EXEC_ORDER_ID"
-        # self.db_cur.execute(sql, {"PROJECT_ID": project_id, "EXEC_ORDER_ID": exec_order_id})
-        # res = self.db_cur.fetchall()[0][0]
-        res_ = self.db_cur.query(
-            sql, **{"PROJECT_ID": project_id, "EXEC_ORDER_ID": exec_order_id})
-        res_ = self.reformat_rows(res_.as_dict())
-        res = res_[0]['STEP_CATG_ID']
+        self.db_cur.execute(sql, {"PROJECT_ID": project_id, "EXEC_ORDER_ID": exec_order_id})
+        res = self.db_cur.fetchall()[0][0]
         return res
 
     def get_all_steps_by_catgid(self, step_catg_id):
@@ -107,54 +79,37 @@ class stepviewData():
         WHERE A.STEP_CATG_ID = :STEP_CATG_ID 
         ORDER BY  A.EXEC_ORDER_ID ASC        
         '''
-        # self.db_cur.execute(sql, {"STEP_CATG_ID": step_catg_id})
-        # res = self.db_cur.fetchall()
-        res_ = self.db_cur.query(sql, **{"STEP_CATG_ID": step_catg_id})
-        res_=self.reformat_rows(res_.as_dict())
-        res = []
-        for res_row in res_:
-            res.append((res_row['EXEC_ORDER_ID'], res_row['STEP_ID'],
-                        res_row['STEP_NAME'], res_row['FUNCTION_CODE'], res_row['STATE']))
+        self.db_cur.execute(sql, {"STEP_CATG_ID": step_catg_id})
+        res = self.db_cur.fetchall()
         return res
 
     def get_step_detail_by_stepid(self, step_id):
         sql = "SELECT A.FUNC_PAR_LIST, A.STEP_NAME ,A.STATE ,A.FUNCTION_CODE,A.BACKGROUND,A.FLOW,A.DEPEND_FLOW FROM MGF_MIG_FLOW_STEP A WHERE A.STEP_ID = :STEP_ID"
         res = []
-        # self.db_cur.execute(sql, {"STEP_ID": step_id})
-        # for row in self.db_cur:
-        #     res.append([row[0].read(), row[1], row[2],
-        #                 row[3], row[4], row[5], row[6]])
-        res_ = self.db_cur.query(sql, **{"STEP_ID": step_id})
-        res_=self.reformat_rows(res_.as_dict())
-        res = []
-        for res_row in res_:
-            res.append([res_row['FUNC_PAR_LIST'], res_row['STEP_NAME'], res_row['STATE'],
-                        res_row['FUNCTION_CODE'], res_row['BACKGROUND'], res_row['FLOW'], res_row['DEPEND_FLOW']])
+        self.db_cur.execute(sql, {"STEP_ID": step_id})
+        for row in self.db_cur:
+            res.append([row[0].read(), row[1], row[2],
+                        row[3], row[4], row[5], row[6]])
         return res
 
     def format_param_cur_value(self, rec):
         # A.PAR_VER_CODE ,A.PAR_CODE, A.GET_TYPE, A.CON_ID, A.SQL, A.CONSTANT,A.CURRENT_VALUE,A.COMMENTS
         # 0                 1           2           3       4       5           6               7
         # ,CONSTANT,COMMAND,SQL
-        if rec['GET_TYPE'] == "CONSTANT":
-            return[rec['PAR_CODE'], rec['GET_TYPE'], rec['CURRENT_VALUE']]
-        elif rec['GET_TYPE'] == "COMMAND":
-            return[rec['PAR_CODE'], rec['GET_TYPE'], f"cur value:{rec['CURRENT_VALUE']} <-\n command:{rec['SQL']}"]
-        elif rec['GET_TYPE'] == "SQL":
-            return[rec['PAR_CODE'], rec['GET_TYPE'], f"cur value:{rec['CURRENT_VALUE']} <-\n db: {rec['CON_ID']},sql:{rec['SQL']}"]
+        if rec[2] == "CONSTANT":
+            return[rec[1], rec[2], rec[6]]
+        elif rec[2] == "COMMAND":
+            return[rec[1], rec[2], f"cur value:{rec[6]} <-\n command:{rec[4]}"]
+        elif rec[2] == "SQL":
+            return[rec[1], rec[2], f"cur value:{rec[6]} <-\n db: {rec[3]},sql:{rec[4]}"]
 
     def get_param_cur_value(self, project_id, par_code):
         result = []
         sql_par_ver_code = "SELECT a.par_ver_code FROM MGF_PROJECT A WHERE A.PROJECT_ID = :PROJECT_ID "
-        # self.db_cur.execute(sql_par_ver_code, {"PROJECT_ID": project_id})
-        # sql_par_ver_code_res = self.db_cur.fetchall()
-        # print("sql_par_ver_code_res",sql_par_ver_code_res)
-        sql_par_ver_code_res_ = self.db_cur.query(
-            sql_par_ver_code, **{"PROJECT_ID": project_id})
-
-        sql_par_ver_code_res = self.reformat_rows(sql_par_ver_code_res_.as_dict())
+        self.db_cur.execute(sql_par_ver_code, {"PROJECT_ID": project_id})
+        sql_par_ver_code_res = self.db_cur.fetchall()
         if len(sql_par_ver_code_res) == 1:
-            par_ver_code = sql_par_ver_code_res[0]['PAR_VER_CODE']
+            par_ver_code = sql_par_ver_code_res[0][0]
         else:
             par_ver_code = "Global"
         sql = '''SELECT A.PAR_VER_CODE ,A.PAR_CODE, A.GET_TYPE, A.CON_ID, A.SQL, A.CONSTANT,A.CURRENT_VALUE,A.COMMENTS
@@ -162,17 +117,14 @@ class stepviewData():
         WHERE A.PAR_CODE = :PAR_CODE
         AND A.PROJECT_ID = :PROJECT_ID
         '''
-        # self.db_cur.execute(
-        #     sql, {"PROJECT_ID": project_id, "PAR_CODE": par_code})
-        # res = self.db_cur.fetchall()
-        res_ = self.db_cur.query(
-            sql, **{"PROJECT_ID": project_id, "PAR_CODE": par_code})
-        res_ = self.reformat_rows(res_.as_dict())
-        for row in res_:
+        self.db_cur.execute(
+            sql, {"PROJECT_ID": project_id, "PAR_CODE": par_code})
+        res = self.db_cur.fetchall()
+        for row in res:
             # COMMENTS 以# 开头 用 par_ver_code  ，否则 用 Global
-            if row['COMMENTS'][0] == "#" and row['PAR_VER_CODE'] == par_ver_code:
+            if row[7][0] == "#" and row[0] == par_ver_code:
                 result.append(self.format_param_cur_value(row))
-            elif row['PAR_VER_CODE'] == "Global":
+            elif row[0] == "Global":
                 result.append(self.format_param_cur_value(row))
         return result
 
@@ -183,27 +135,13 @@ class stepviewData():
         s_KEYWORD = f"{keyword}".upper()
         param_list = {"STEP_CATG_ID": s_CATG_ID, "s_KEYWORD": s_KEYWORD}
         print(param_list)
-        pattern_ = str(self.migsever_db_constr).split(':')[0]
-        sql_front = """SELECT A.STEP_ID   FROM MGF_MIG_FLOW_STEP A WHERE  A.STEP_CATG_ID = :STEP_CATG_ID """
-        if 'sqlite' in pattern_:
-            sql_condition = """AND (UPPER(A.STEP_NAME) regexp :s_KEYWORD or UPPER(A.FUNC_PAR_LIST) regexp :s_KEYWORD ) """
-        elif 'mysql' in pattern_:
-            sql_condition = """AND (UPPER(A.STEP_NAME) regexp :s_KEYWORD or UPPER(A.FUNC_PAR_LIST) regexp :s_KEYWORD ) """
-        elif 'oracle' in pattern_:
-            sql_condition = """AND (REGEXP_LIKE(UPPER(A.STEP_NAME), :s_KEYWORD ) OR REGEXP_LIKE(UPPER(A.FUNC_PAR_LIST), :s_KEYWORD )) """
-        elif 'postgresql' in pattern_:
-            sql_condition = """AND (UPPER(A.STEP_NAME) ~* :s_KEYWORD or UPPER(A.FUNC_PAR_LIST) ~* :s_KEYWORD ) """
-        elif 'mssql' in pattern_:
-            sql_condition = """AND (UPPER(A.STEP_NAME) like '%:s_KEYWORD%' or UPPER(A.FUNC_PAR_LIST) like '%:s_KEYWORD%' ) """
-        else:
-            sql_condition = " "
-        sql = f"{sql_front} {sql_condition}"
-        # self.db_cur.execute(sql, param_list)
-        res_ = self.db_cur.query(sql, **param_list)
-        res_=self.reformat_rows(res_.as_dict())
+        sql = """SELECT A.STEP_ID   FROM MGF_MIG_FLOW_STEP A WHERE (REGEXP_LIKE(UPPER(A.STEP_NAME), :s_KEYWORD ) 
+                  OR REGEXP_LIKE(UPPER(A.FUNC_PAR_LIST), :s_KEYWORD )) AND A.STEP_CATG_ID = :STEP_CATG_ID   """
+        self.db_cur.execute(sql, param_list)
+        res_ = self.db_cur.fetchall()
         res = []
         for row in res_:
-            res.append(str(row['STEP_ID']))
+            res.append(str(row[0]))
         return res
 
 
@@ -216,14 +154,14 @@ class stepviewGui(tkinter.Frame):
 
     def set_oracle_path(self):
         # print(os.environ)
-        all_path = os.environ['PATH']
-        ora_path = filedialog.askdirectory(title="choose database client path")
+        all_path=os.environ['PATH']
+        ora_path=filedialog.askdirectory(title="choose database client path")
         newpath = f"{all_path};{ora_path}"
         os.putenv("PATH", newpath)
 
     def rd_cfg(self):
-        if os.path.exists("./migstepviewer.cfg"):
-            with open("./migstepviewer.cfg", 'r', encoding="utf-8") as fp:
+        if os.path.exists("./migstepviewer_oracle.cfg"):
+            with open("./migstepviewer_oracle.cfg", 'r', encoding="utf-8") as fp:
                 a = yaml.safe_load(fp)
             print(a)
             self.migsever_db_constr = a['db_con']
@@ -238,8 +176,9 @@ class stepviewGui(tkinter.Frame):
     def test_db(self):
         try:
             self.db_inst = stepviewData(self.migsever_db_constr)
-            res_ = self.db_inst.db_cur.query(
-                "SELECT 1 cnt FROM MGF_PROJECT A ")
+            self.db_inst.db_cur.execute(
+                "SELECT * FROM MGF_PROJECT A WHERE ROWNUM < 3 ")
+            print(self.db_inst.db_cur.fetchall())
         except Exception as e:
             print("ERROR IN ORACLE : {}".format(str(e)))
             self.btn_project_id_lock["state"] = "disabled"
@@ -375,21 +314,15 @@ class stepviewGui(tkinter.Frame):
 
     def btn_connect_db(self):
         "点击 connect 按钮：1，清空其他地方的展示；2，锁定 数据库连接串 self.migsever_db_constr  ;3，检查数据库是否可以连接 ;4,解锁项目id"
-
         # 1，清空其他地方的展示
         # self.strV_project_id.set("")
         self.btn_search['state'] = "disabled"
         # 2，锁定 数据库连接串
         # 2.1 拼接 数据库连接串
-        self.db_type = self.cbox_db_type.get()
         self.migsever_db_constr = self.ent_db_con_str.get()
-        if self.db_type in self.migsever_db_constr:
-            self.migsever_db_constr = self.ent_db_con_str.get()
-        else:
-            self.migsever_db_constr = f"{self.db_type}{self.migsever_db_constr}"
-        print("migsever_db_constr", self.migsever_db_constr)
+        print("migsever_db_constr",self.migsever_db_constr)
         # 3，检查数据库是否可以连接
-        res = self.test_db()
+        res=self.test_db()
         if res == True:
             self.ent_db_con_str["bg"] = "green"
             # 4,解锁项目id
@@ -433,12 +366,9 @@ class stepviewGui(tkinter.Frame):
             # 3, 绑定  project_id的输入
             self.project_id = project_id_
             # 4, 数据库连接写入配置文件
-            # self.db_type self.db_type
-            constr = self.ent_db_con_str.get()
-            if self.db_type not in constr:
-                constr=f"{self.db_type}{constr}"
-            with open("./migstepviewer.cfg", 'w', encoding="utf-8") as fp:
-                yaml.safe_dump({"db_con": constr, "projectid": self.project_id}, fp)
+            with open("./migstepviewer_oracle.cfg", 'w', encoding="utf-8") as fp:
+                yaml.safe_dump({"db_con": self.ent_db_con_str.get().strip(
+                ), "projectid": self.project_id}, fp)
             # 5, 展示project 名字
             namestr = self.db_inst.get_project_info(self.project_id)
             # print(namestr)
@@ -481,10 +411,16 @@ class stepviewGui(tkinter.Frame):
         self.strV_search_keyword.set("")
         self.btn_search['state'] = 'normal'
 
-    def show_ver(self, event):
-        # Submit requirements and bugs to 'zhu.jian@iwhalecloud.com'
-        ver_text = '''
-2020-12-15 v0.2.0扩展数据库支持范围支持mysql,postgresql,oracle,MsSql(pg,MsSql未测试)
+    def show_ver(self,event):
+    # Submit requirements and bugs to 'zhu.jian@iwhalecloud.com'
+        ver_text = '''v0.1 工具基本功能完成
+v0.1.1增加配置记忆
+2020-10-13 v0.1.2修复按键延后响应,增加版本提示
+2020-11-09 v0.1.3增加项目名称显示
+2020-11-09 v0.1.4增加滚动条和搜索, 增加中文语言字符设置
+2020-12-08 v0.1.5增加分隔符颜色区分和stepname显示,增加value的格式化
+2020-12-10 v0.1.6修复step状态显示，增加step详情信息,修改版本提示方式,TRIGGER_LIST展示格式
+2020-12-15 v0.1.7增加数据库连接报错提示，增加指定64位oracle客户端环境变量
 '''
         tkinter.messagebox.showinfo(
             title=f'版本说明{self.ver},{self.ver_date}', icon=None, message=ver_text, parent=self.root, type="ok")
@@ -504,14 +440,14 @@ class stepviewGui(tkinter.Frame):
 
     def draw_GUI(self):
         # 版本号，时间
-        self.ver = "0.2.0"
+        self.ver = "0.1.7"
         self.ver_date = "2020-12-15"
         # 绘制主窗口
         self.root = tkinter.Tk()
-        self.root.title(f"Migration Steps Viewer v{self.ver}")
+        self.root.title(f"Migration Steps Viewer oracle v{self.ver}")
         self.root.geometry("1210x900+60+30")
         self.root.resizable(1, 1)
-        self.root.iconbitmap(self.resource_path('./logos.ico'))
+        self.root.iconbitmap(self.resource_path('./logo.ico'))
         # 参数绑定
         self.dft_bg = self.root.cget('background')
         self.strV_db_con_str = StringVar()
@@ -524,18 +460,6 @@ class stepviewGui(tkinter.Frame):
         self.lblframe_input = tkinter.LabelFrame(
             self.root, text="input infomation", padx=5, pady=5)
         self.lblframe_input.pack(side='top', expand=False, fill='x')
-        # db type
-        lbl_db_type = tkinter.Label(
-            self.lblframe_input, text="DB type:")
-        lbl_db_type.pack(side='left')
-        lbl_db_type.bind("<Button-1>", self.show_dbconstr_help)
-        self.cbox_db_type = ttk.Combobox(self.lblframe_input, width=13)
-        self.cbox_db_type.pack(side='left')
-        dbs = ('sqlite:///', 'mysql+pymysql://', 'mssql+pymsql://',
-               'postgresql://', 'oracle://', 'oracle+cx_oracle://')
-        self.cbox_db_type['value'] = dbs
-        self.cbox_db_type.current(4)
-
         self.lbl_db_con_str = tkinter.Label(
             self.lblframe_input, text="Database Constr:")
         self.lbl_db_con_str.pack(side='left')
@@ -565,7 +489,7 @@ class stepviewGui(tkinter.Frame):
         self.lbl_ver_info = tkinter.Label(
             self.lblframe_input, text=f"   VER: {self.ver}, {self.ver_date}",)
         self.lbl_ver_info.pack(side='right')
-        self.lbl_ver_info.bind("<Button-1>", self.show_ver)
+        self.lbl_ver_info.bind("<Button-1>",self.show_ver)
         # 读取配置文件
         self.rd_cfg()
         # 7个按钮展示不同的catg

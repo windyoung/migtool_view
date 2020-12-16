@@ -1,0 +1,7 @@
+oracle://scott:tiger@hostname:1521/sidname #oracle,odbc
+oracle+cx_oracle://scott:tiger@tnsname #oracle,tnsname
+sqlite:///:memory: #sqlite内存
+sqlite:///./cnblogblog.db #sqlite文件
+mysql+pymysql://username:password@hostname:port/dbname #mysql+pymysql
+mssql+pymssql://username:password@hostname:port/dbname #mssql+pymssql
+postgresql://scott:tiger@hostname:5432/dbname #postgresql示例

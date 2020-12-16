@@ -2,10 +2,10 @@
 '''
 Author: windyoung
 Date: 2020-12-09 00:41:15
-LastEditTime: 2020-12-10 11:57:39
+LastEditTime: 2020-12-15 23:30:24
 LastEditors: windyoung
 Description: 
-FilePath: \migtool_viewer\compilepy.py
+FilePath: \migtool_plugin\migtool_viewer\compilepy.py
  '''
 
 
@@ -50,11 +50,11 @@ exe = EXE(pyz,
           runtime_tmpdir=None,
           console=False,
           icon='logo.ico' )
-
 """
     change_root ="D:"
     cd_path = r"cd D:\apps\py_work\migtool_plugin\migtool_viewer"
-    compile_py = r"pyinstaller.exe -i ./logo.ico -F -w .\MigrationStepViewer.spec --onefile"
+    compile_py = r"pyinstaller.exe -i ./logos.ico -F -w .\MigrationStepViewer.spec  --onefile --clean"
+    compile_py_oracle = r"pyinstaller.exe -i ./logo.ico -F .\MigrationStepViewer_oracle.spec --onefile --clean "
     os.system(change_root)
     os.system(cd_path)
     os.system(compile_py)
